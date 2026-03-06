@@ -1,99 +1,145 @@
 """
-MATH 170 - Lab 06: Root Finding -- Reference Solution
+MATH 170 - Lab 06: Root Finding (Bisection + Newton)
 Spring 2026
 
-This file is for instructor/reference use.
-"""
+Instructions
+------------
+1) Implement the bisection method (robust, guaranteed if bracketed).
+2) Implement Newton's method (fast, but can fail).
+3) Use bisection to solve a small real application (loan interest rate).
 
-from __future__ import annotations
+Core restriction (for this lab's submission):
+- Do NOT call SciPy root finders (e.g., scipy.optimize.bisect/newton).
+  Implement the algorithms yourself.
+"""
 
 
 def bisection(f, a, b, tol=1e-10, max_iter=100):
-    if tol <= 0:
-        raise ValueError("tol must be positive")
-    if max_iter <= 0:
-        raise ValueError("max_iter must be positive")
+    """
+    Find a root of f in [a, b] using the bisection method.
 
-    # Ensure a <= b
-    if a > b:
-        a, b = b, a
+    Parameters
+    ----------
+    f : callable
+        Function to find a root of (solve f(x) = 0).
+    a, b : float
+        Interval endpoints. Must have a sign change: f(a) * f(b) < 0.
+    tol : float
+        Convergence tolerance (stop when interval width < tol OR |f(m)| < tol).
+    max_iter : int
+        Maximum number of iterations.
 
-    fa = f(a)
-    fb = f(b)
+    Returns
+    -------
+    tuple
+        (root, iterations, history)
+        - root: approximate root
+        - iterations: number of iterations performed
+        - history: list of midpoints (length == iterations)
+    """
+    # TODO:
+    # - Check bracket validity (sign change on [a, b]); raise ValueError if not.
+    # - Repeatedly bisect the interval and keep the half that contains the root.
+    # - Track midpoints in `history`.
+    # - Return (root, iterations, history).
 
-    if fa == 0:
-        return a, 0, []
-    if fb == 0:
-        return b, 0, []
-
-    if fa * fb > 0:
-        raise ValueError("Need sign change on [a, b]")
-
-    history: list[float] = []
-
-    for i in range(max_iter):
-        m = (a + b) / 2
-        fm = f(m)
-        history.append(m)
-
-        if abs(fm) < tol or abs(b - a) < tol:
-            return m, i + 1, history
-
-        # Keep the half interval with the sign change.
-        if fa * fm < 0:
-            b = m
-            fb = fm
-        else:
-            a = m
-            fa = fm
-
-    return m, max_iter, history
+    return None  # Replace with your code
 
 
 def newton(f, df, x0, tol=1e-10, max_iter=50):
-    if tol <= 0:
-        raise ValueError("tol must be positive")
-    if max_iter <= 0:
-        raise ValueError("max_iter must be positive")
+    """
+    Find a root of f using Newton's method.
 
-    x = float(x0)
-    history: list[float] = []
+    Newton update:
+        x_{n+1} = x_n - f(x_n) / f'(x_n)
 
-    for i in range(max_iter):
-        fx = f(x)
-        if abs(fx) < tol:
-            return x, i, history
+    Parameters
+    ----------
+    f : callable
+        Function to find a root of.
+    df : callable
+        Derivative of f.
+    x0 : float
+        Initial guess.
+    tol : float
+        Convergence tolerance (stop when |f(x)| < tol).
+    max_iter : int
+        Maximum number of iterations.
 
-        dfx = df(x)
-        if abs(dfx) < 1e-15:
-            raise ValueError("Derivative too small")
+    Returns
+    -------
+    tuple
+        (root, iterations, history)
+        - root: approximate root
+        - iterations: number of iterations performed
+        - history: list of iterates x_1, x_2, ... (length == iterations)
+    """
+    # TODO:
+    # - Iterate Newton updates starting at x0.
+    # - Stop when |f(x)| < tol.
+    # - If the derivative is too small, raise ValueError.
+    # - Track iterates in `history` and return (root, iterations, history).
 
-        x = x - fx / dfx
-        history.append(x)
-
-    return x, max_iter, history
+    return None  # Replace with your code
 
 
 def loan_payment_residual(rate, principal, payment, n_months):
-    if n_months < 0:
-        raise ValueError("n_months must be non-negative")
+    """
+    Residual (remaining balance) after n_months payments for a simple loan model.
 
-    if rate == 0.0:
-        return float(principal) - float(payment) * int(n_months)
+    We model monthly compounding and fixed monthly payments:
+      balance_{k+1} = balance_k * (1 + r_monthly) - payment
 
-    r_monthly = rate / 12
-    balance = float(principal)
+    If the residual is:
+    - 0: exactly paid off
+    - positive: underpaid (still owe money)
+    - negative: overpaid (paid too much)
 
-    for _ in range(int(n_months)):
-        balance *= 1 + r_monthly
-        balance -= payment
+    Parameters
+    ----------
+    rate : float
+        Annual interest rate (e.g., 0.12 for 12%).
+    principal : float
+        Initial loan amount.
+    payment : float
+        Fixed monthly payment.
+    n_months : int
+        Number of payments.
 
-    return float(balance)
+    Returns
+    -------
+    float
+        Remaining balance after n_months payments.
+    """
+    # TODO:
+    # - Handle the special case rate == 0.0.
+    # - Otherwise simulate month-by-month as described in the docstring.
+
+    return None  # Replace with your code
 
 
 def find_interest_rate(principal, payment, n_months):
-    def residual(rate):
-        return loan_payment_residual(rate, principal, payment, n_months)
+    """
+    Find the annual interest rate that makes the loan residual ~ 0.
 
-    root, iters, history = bisection(residual, 0.0, 0.50, tol=1e-10, max_iter=200)
-    return root
+    Uses bisection on a reasonable interval of annual rates.
+
+    Parameters
+    ----------
+    principal : float
+        Initial loan amount.
+    payment : float
+        Fixed monthly payment.
+    n_months : int
+        Number of payments.
+
+    Returns
+    -------
+    float
+        Annual interest rate (e.g., 0.10 for 10%).
+    """
+    # TODO:
+    # - Define g(rate) = loan_payment_residual(rate, principal, payment, n_months)
+    # - Use bisection to find a root of g on an interval like [0.0, 0.50].
+
+    return None  # Replace with your code
